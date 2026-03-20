@@ -1,0 +1,81 @@
+# Postgres, Redis, migrate, web (port 3000), Sidekiq. See README.
+
+x-app: &app
+  build:
+    context: .
+    dockerfile: docker/development/Dockerfile
+  environment:
+    RAILS_ENV: development
+    POSTGRES_HOST: postgres
+    POSTGRES_USER: postgres
+    POSTGRES_PASSWORD: postgres
+    POSTGRES_PORT: "5432"
+    REDIS_URL: redis://redis:6379/0
+    HUBSPOT_API_KEY: ${HUBSPOT_API_KEY:-}
+  volumes:
+    - .:/rails
+  working_dir: /rails
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: empflippers_postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: empflippers_development
+    volumes:
+      - empflippers_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: empflippers_redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  migrate:
+    <<: *app
+    command: ./bin/rails db:prepare
+    restart: "no"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  web:
+    <<: *app
+    command: sh -c "rm -f tmp/pids/server.pid && exec ./bin/rails server -b 0.0.0.0 -p 3000"
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+  sidekiq:
+    <<: *app
+    command: bundle exec sidekiq -C config/sidekiq.yml
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+volumes:
+  empflippers_pgdata:

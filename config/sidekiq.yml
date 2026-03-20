@@ -1,0 +1,14 @@
+# bundle exec sidekiq -C config/sidekiq.yml
+
+:require: ./config/environment.rb
+
+:concurrency: 5
+:queues:
+  - default
+
+:scheduler:
+  :schedule:
+    daily_sync:
+      cron: "0 9 * * *" # 09:00 UTC daily
+      class: DailySyncJob
+      description: "Fetch Empire Flippers listings, then sync For Sale deals to HubSpot"
