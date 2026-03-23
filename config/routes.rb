@@ -11,4 +11,7 @@ Rails.application.routes.draw do
 
   # Defines the root path route ("/")
   # root "posts#index"
+
+  # Dev-only: verify EF / HubSpot / Google credentials (loads .env via dotenv-rails).
+  get "integration_check", to: "integration_checks#show"
 end

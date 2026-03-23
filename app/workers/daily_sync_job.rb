@@ -8,6 +8,6 @@ class DailySyncJob
 
   def perform
     EmpireFlippers::SyncListingsService.new.call
-    HubSpot::SyncHubspotDealsService.new.call
+    ListingExport::Orchestrator.call
   end
 end

@@ -66,3 +66,5 @@ gem "webmock", "~> 3.26", groups: [:development, :test]
 
 gem "hubspot-api-client", "~> 20.0", groups: []
 gem "faraday", "~> 2.14", groups: []
+gem "google-apis-sheets_v4", "~> 0.40", groups: []
+gem "googleauth", "~> 1.11", groups: []
